@@ -1,0 +1,63 @@
+version: 1
+trackers:
+  - id: gh-issues
+    kind: github-issues
+    owner: matpeltier
+    repo: dk-e2e-calc-cli
+    tokenEnv: GITHUB_TOKEN
+repositories:
+  - id: main-repo
+    kind: github
+    owner: matpeltier
+    repo: dk-e2e-calc-cli
+    defaultBranch: main
+    tokenEnv: GITHUB_TOKEN
+harnessProfiles:
+  # Primary implementation model (different from the daemon default)
+  - managed: true
+    id: oc-sonnet
+    kind: opencode
+    model: opencode/claude-sonnet-4-5
+    fallbackModels:
+      - opencode-go/glm-5.3
+  # Specialized implementer on a different provider/model entirely
+  - managed: true
+    id: oc-kimi
+    kind: opencode
+    model: opencode-go/kimi-k2.7-code
+    instructions: You are a TDD specialist. Always write failing tests first, then implement.
+    fallbacks: []
+  # Reviewer on yet another model
+  - managed: true
+    id: oc-haiku
+    kind: opencode
+    model: opencode/claude-haiku-4-5
+roles:
+  - id: implementer
+    harnessProfileId: oc-sonnet
+  - id: implementer-special
+    harnessProfileId: oc-kimi
+    fallbacks:
+      - oc-sonnet
+  - id: reviewer
+    harnessProfileId: oc-haiku
+  - id: fixer
+    harnessProfileId: oc-sonnet
+  - id: repository-tester
+    harnessProfileId: oc-haiku
+workflows:
+  - id: spec-driven
+    file: workflows/spec-driven.ts
+    roles:
+      - implementer-special
+      - reviewer
+      - fixer
+      - repository-tester
+mergePolicy:
+  strategy: squash
+  requiredChecks:
+    - test
+  requireApproval: false
+  deleteHeadBranchAfterMerge: true
+scheduler:
+  autoPromoteDependents: true

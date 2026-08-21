@@ -1,0 +1,11 @@
+{
+  "name": "dk-e2e-calc-cli",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Tiny calculator CLI (Dark Kitchen E2E phase 2)",
+  "scripts": {
+    "test": "node --test test/"
+  },
+  "license": "MIT"
+}
