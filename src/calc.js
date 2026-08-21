@@ -1,52 +1,6 @@
 #!/usr/bin/env node
 
-<<<<<<< HEAD
 import { createInterface } from 'node:readline';
-import { evaluate } from './parser.js';
-
-const USAGE = 'Usage: node src/calc.js eval "<expression>" | node src/calc.js repl';
-
-function runEval(args) {
-  const expression = args.join(' ').trim();
-  try {
-    console.log(evaluate(expression));
-  } catch (error) {
-    console.error(error.message);
-    process.exitCode = 1;
-  }
-}
-
-function runRepl() {
-  const rl = createInterface({ input: process.stdin });
-
-  rl.on('line', (line) => {
-    const expression = line.trim();
-    if (expression === '') {
-      return;
-    }
-    try {
-      console.log(evaluate(expression));
-    } catch (error) {
-      console.error(error.message);
-    }
-  });
-
-  rl.on('close', () => {
-    process.exitCode = 0;
-  });
-}
-
-const args = process.argv.slice(2);
-const command = args[0];
-
-if (command === 'eval') {
-  runEval(args.slice(1));
-} else if (command === 'repl') {
-  runRepl();
-} else {
-  console.error(USAGE);
-  process.exitCode = 1;
-=======
 import { pathToFileURL } from 'node:url';
 
 class CalcError extends Error {}
@@ -200,36 +154,64 @@ export function formatResult(value) {
 }
 
 const USAGE = `Usage: node src/calc.js eval "<expression>"
+       node src/calc.js repl
 
 Evaluates arithmetic expressions with + - * / and parentheses.
 
+Commands:
+  eval "<expression>"  Evaluate one expression and print the result.
+  repl                 Read expressions from stdin, one per line, printing each result until EOF.
+
 Examples:
   node src/calc.js eval "2 + 3 * 4"
-  node src/calc.js eval "(2 + 3) * 4"
+  echo "2 + 3" | node src/calc.js repl
 `;
+
+function runRepl() {
+  const rl = createInterface({ input: process.stdin });
+
+  rl.on('line', (line) => {
+    const expression = line.trim();
+    if (expression === '') {
+      return;
+    }
+    try {
+      process.stdout.write(`${formatResult(evaluate(expression))}\n`);
+    } catch (err) {
+      process.stderr.write(`Error: ${err.message}\n`);
+    }
+  });
+
+  rl.on('close', () => {
+    process.exitCode = 0;
+  });
+}
 
 function main(argv) {
   const [command, ...args] = argv;
-  if (command !== 'eval') {
-    process.stderr.write(USAGE);
-    return 1;
+  if (command === 'eval') {
+    if (args.length !== 1) {
+      process.stderr.write('Error: eval expects exactly one quoted expression\n\n');
+      process.stderr.write(USAGE);
+      return 1;
+    }
+    try {
+      const result = evaluate(args[0]);
+      process.stdout.write(`${formatResult(result)}\n`);
+      return 0;
+    } catch (err) {
+      process.stderr.write(`Error: ${err.message}\n`);
+      return 1;
+    }
   }
-  if (args.length !== 1) {
-    process.stderr.write('Error: eval expects exactly one quoted expression\n\n');
-    process.stderr.write(USAGE);
-    return 1;
-  }
-  try {
-    const result = evaluate(args[0]);
-    process.stdout.write(`${formatResult(result)}\n`);
+  if (command === 'repl') {
+    runRepl();
     return 0;
-  } catch (err) {
-    process.stderr.write(`Error: ${err.message}\n`);
-    return 1;
   }
+  process.stderr.write(USAGE);
+  return 1;
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   process.exitCode = main(process.argv.slice(2));
->>>>>>> origin/main
 }
