@@ -181,10 +181,28 @@ function startRepl() {
       process.stderr.write(`Error: ${err.message}\n`);
     }
   });
+  rl.on('close', () => {
+    process.exitCode = 0;
+  });
 }
 
 function main(argv) {
   const [command, ...args] = argv;
+  if (command === 'eval') {
+    if (args.length !== 1) {
+      process.stderr.write('Error: eval expects exactly one quoted expression\n\n');
+      process.stderr.write(USAGE);
+      return 1;
+    }
+    try {
+      const result = evaluate(args[0]);
+      process.stdout.write(`${formatResult(result)}\n`);
+      return 0;
+    } catch (err) {
+      process.stderr.write(`Error: ${err.message}\n`);
+      return 1;
+    }
+  }
   if (command === 'repl') {
     if (args.length !== 0) {
       process.stderr.write('Error: repl does not accept arguments\n\n');
@@ -194,23 +212,8 @@ function main(argv) {
     startRepl();
     return 0;
   }
-  if (command !== 'eval') {
-    process.stderr.write(USAGE);
-    return 1;
-  }
-  if (args.length !== 1) {
-    process.stderr.write('Error: eval expects exactly one quoted expression\n\n');
-    process.stderr.write(USAGE);
-    return 1;
-  }
-  try {
-    const result = evaluate(args[0]);
-    process.stdout.write(`${formatResult(result)}\n`);
-    return 0;
-  } catch (err) {
-    process.stderr.write(`Error: ${err.message}\n`);
-    return 1;
-  }
+  process.stderr.write(USAGE);
+  return 1;
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
