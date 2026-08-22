@@ -159,29 +159,28 @@ const USAGE = `Usage: node src/calc.js eval "<expression>"
 Evaluates arithmetic expressions with + - * / and parentheses.
 
 Commands:
-  eval "<expression>"  Evaluate one expression and print the result.
-  repl                 Read expressions from stdin, one per line, printing each result until EOF.
+  eval  Evaluate a single quoted expression and print the result.
+  repl  Read expressions from stdin, one per line, printing each
+        result until EOF. Errors are reported per line.
 
 Examples:
   node src/calc.js eval "2 + 3 * 4"
+  node src/calc.js eval "(2 + 3) * 4"
   echo "2 + 3" | node src/calc.js repl
 `;
 
-function runRepl() {
-  const rl = createInterface({ input: process.stdin });
-
+function startRepl() {
+  const rl = createInterface({ input: process.stdin, crlfDelay: Infinity });
   rl.on('line', (line) => {
     const expression = line.trim();
-    if (expression === '') {
-      return;
-    }
+    if (expression === '') return;
     try {
-      process.stdout.write(`${formatResult(evaluate(expression))}\n`);
+      const result = evaluate(expression);
+      process.stdout.write(`${formatResult(result)}\n`);
     } catch (err) {
       process.stderr.write(`Error: ${err.message}\n`);
     }
   });
-
   rl.on('close', () => {
     process.exitCode = 0;
   });
@@ -205,7 +204,12 @@ function main(argv) {
     }
   }
   if (command === 'repl') {
-    runRepl();
+    if (args.length !== 0) {
+      process.stderr.write('Error: repl does not accept arguments\n\n');
+      process.stderr.write(USAGE);
+      return 1;
+    }
+    startRepl();
     return 0;
   }
   process.stderr.write(USAGE);

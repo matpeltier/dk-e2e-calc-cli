@@ -31,6 +31,17 @@ describe('evaluate', () => {
     assert.equal(evaluate('(2 + 3) * (4 - 1)'), 15);
   });
 
+  it('combines precedence and parentheses in one expression', () => {
+    assert.equal(evaluate('(2 + 3) * 4 - 6 / 3'), 18);
+    assert.equal(evaluate('(20 - 6 / 3) / (2 * (1 + 1))'), 4.5);
+    assert.equal(evaluate('2 * (3 + (4 - 1) * 5)'), 36);
+  });
+
+  it('ignores surrounding and inner whitespace', () => {
+    assert.equal(evaluate('  7\t*\n6 '), 42);
+    assert.equal(evaluate('\t( 1+2 )\n'), 3);
+  });
+
   it('supports unary minus and plus', () => {
     assert.equal(evaluate('-5'), -5);
     assert.equal(evaluate('--5'), 5);
@@ -80,6 +91,12 @@ describe('formatResult', () => {
 
   it('keeps fractional results', () => {
     assert.equal(formatResult(2.5), '2.5');
+    assert.equal(formatResult(-0.75), '-0.75');
+  });
+
+  it('throws on non-finite results', () => {
+    assert.throws(() => formatResult(Infinity), /not a finite number/);
+    assert.throws(() => formatResult(NaN), /not a finite number/);
   });
 });
 
